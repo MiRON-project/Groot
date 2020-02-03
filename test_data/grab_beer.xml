@@ -1,0 +1,25 @@
+<root main_tree_to_execute="BehaviorTree">
+    <BehaviorTree ID="BehaviorTree">
+        <Sequence>
+            <SetBlackboard output_key="slow" value="160" />
+            <SetBlackboard output_key="fast" value="10" />
+            <Timeout msec="150">
+                <OpenFridge name="OpenFridge" ID="OpenFridge"/>
+            </Timeout>
+            <QueueNode>
+                <Timeout msec="150">
+                    <GrabBeer name="GrabBeer" ID="GrabBeer"/>
+                </Timeout>
+                <Timeout msec="150">
+                    <CloseFridge name="CloseFridge" ID="CloseFridge"/>
+                </Timeout>
+            </QueueNode>
+        </Sequence>
+    </BehaviorTree>
+
+    <TreeNodesModel>
+        <Action ID="OpenFridge"/>
+        <Action ID="GrabBeer"/>
+        <Action ID="CloseFridge"/>
+    </TreeNodesModel>
+</root>
