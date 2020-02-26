@@ -1,0 +1,269 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="BehaviorTree">
+    <!-- ////////// -->
+    <BehaviorTree ID="BackwardsWalk">
+        <Sequence>
+            <Action ID="StopRobot" frequency="{message_frequency}" message="{message}" velocity="0"/>
+            <Action ID="AuditoryInstruction" frequency="{message_frequency}" message="{audio_message}"/>
+            <SubTree ID="VelocityCalculator" gait="{gait_type}" handle="{handle_context}" velocity="{vel}"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="BehaviorTree">
+        <Fallback>
+            <Sequence>
+                <ReactiveSequence>
+                    <Condition ID="RehabilitationMode" navigation_mode="{mode}"/>
+                    <Parallel threshold="1">
+                        <Timeout msec="{RehabTime}">
+                            <Action ID="NumberOfSteps"/>
+                        </Timeout>
+                        <Inverter>
+                            <Timeout msec="{RehabTime}">
+                                <RetryUntilSuccesful num_attempts="-1">
+                                    <Inverter>
+                                        <SubTree ID="RehabilitationWalk"/>
+                                    </Inverter>
+                                </RetryUntilSuccesful>
+                            </Timeout>
+                        </Inverter>
+                    </Parallel>
+                </ReactiveSequence>
+                <Action ID="EncourageMessage" frequency="{message_frequency}" message="{audio_message}"/>
+                <Action ID="AuditoryInstruction" frequency="{message_frequency}" message="{audio_message}"/>
+            </Sequence>
+            <Sequence>
+                <Condition ID="AutonomousMode" navigation_mode="{mode}"/>
+            </Sequence>
+        </Fallback>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="FestinatingTurning">
+        <Sequence>
+            <Condition ID="Turning" force_action="{handle_context}"/>
+            <Action ID="StopRobot" frequency="{message_frequency}" message="{message}" velocity="0"/>
+            <Action ID="AuditoryInstruction" frequency="{message_frequency}" message="{audio_message}"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="FestinatingWalk">
+        <Sequence>
+            <SubTree ID="VelocityCalculator" gait="{gait_type}" handle="{handle_context}" velocity="{vel}"/>
+            <Action ID="FesteningMessage" frequency="{message_frequency}" message="{audio_message}" step="{mean_walk_speed}"/>
+            <Action ID="AuditoryInstruction" frequency="{message_frequency}" message="{audio_message}"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="ForceAnalysis">
+        <Sequence>
+            <Action ID="ForceSensor" forces="{raw_fd}"/>
+            <Action ID="ForceAnalyzer" force_action="{handle_context}" forces="{raw_fd}"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="FreezingWalk">
+        <Sequence>
+            <SubTree ID="VelocityCalculator" gait="{gait_type}" handle="{handle_context}" velocity="{vel}"/>
+            <Action ID="FreezingMessage" frequency="{audio_frequency}" message="{audio_message}" step="{mean_walk_speed}"/>
+            <Action ID="AuditoryInstruction" frequency="{message_frequency}" message="{audio_message}"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="GaitAnalysis">
+        <Sequence>
+            <Action ID="LRFSensor" LRF="{raw_lrf_data}"/>
+            <Action ID="ForceSensor" forces="{raw_fd}"/>
+            <Action ID="GaitRecognizer" LRF="{raw_lrf_data}" forces="{raw_fd}" gait="{gait_type}"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="MaxVelAnalysis">
+        <Sequence>
+            <SubTree ID="RoadAnalysis" road_contition="{road_context}" temporal_goal="{goal_pose}"/>
+            <Action ID="MaxVelocityAnalyzer" max_rotation="{max_angular_vel}" max_speed="{max_linear_vel}" road_condition="{road_context}"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="RehabilitationWalk">
+        <Sequence>
+            <SubTree ID="GaitAnalysis" gait="{gait_type}"/>
+            <SubTree ID="ForceAnalysis" force_action="{handle_context}"/>
+            <Fallback>
+                <Sequence>
+                    <Condition ID="Festinating" gait="{gait_type}"/>
+                    <Fallback>
+                        <SubTree ID="FestinatingTurning" force_action="{handle_context}"/>
+                        <SubTree ID="FestinatingWalk" force_action="{handle_context}" gait="{gait_type}"/>
+                    </Fallback>
+                </Sequence>
+                <Sequence>
+                    <Condition ID="Freezing" gait="{gait_type}"/>
+                    <SubTree ID="FreezingWalk" force_action="{handle_context}" gait="{gait_type}"/>
+                </Sequence>
+                <Sequence>
+                    <Fallback>
+                        <Sequence>
+                            <Condition ID="Turning" force_action="{handle_context}"/>
+                            <SubTree ID="VelocityCalculator" gait="{gait_type}" handle="{handle_context}" velocity="{vel}"/>
+                        </Sequence>
+                        <Sequence>
+                            <Condition ID="Backwards" force_action="{handle_context}"/>
+                            <SubTree ID="BackwardsWalk" gait="{gait_type}" handle="{handle_context}" velocity="{vel}"/>
+                        </Sequence>
+                        <SubTree ID="VelocityCalculator" gait="{gait_type}" handle="{handle_context}" velocity="{vel}"/>
+                    </Fallback>
+                </Sequence>
+            </Fallback>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="RoadAnalysis">
+        <Sequence>
+            <Action ID="LaseDataSegmentation" laser_data="{processed_ld}" laser_raw_data="{raw_ld}"/>
+            <Action ID="RoadConditionAnalyzer" laser_data="{processed_ld}" road_condition="{road_context}" temporal_goal="{goal_pose}"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="StepAnalysis">
+        <Sequence>
+            <Action ID="LRFSensor" LRF="{raw_lrf_data}"/>
+            <Action ID="StepAnalyzer" LRF="{raw_lrf_data}" step="{mean_walk_speed}"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="VelocityCalculator">
+        <SequenceStar>
+            <SubTree ID="StepAnalysis" step="{mean_walk_speed}"/>
+            <SubTree ID="MaxVelAnalysis" max_linear_vel="{max_linear_vel}" max_rotation="{max_angular_vel}"/>
+            <Action ID="SpeedControl" gait="{gait_type}" handle="{handle_context}" max_rotation="{max_angular_vel}" max_speed="{max_linear_vel}" step="{mean_walk_speed}" velocity="{vel}"/>
+        </SequenceStar>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <TreeNodesModel>
+        <Action ID="AuditoryInstruction">
+            <input_port default="{message_frequency}" name="frequency"/>
+            <input_port default="{audio_message}" name="message"/>
+        </Action>
+        <Condition ID="AutonomousMode">
+            <input_port default="{mode}" name="navigation_mode"/>
+        </Condition>
+        <Condition ID="Backwards">
+            <input_port default="{handle_context}" name="force_action"/>
+        </Condition>
+        <SubTree ID="BackwardsWalk">
+            <input_port default="{gait_type}" name="gait"/>
+            <input_port default="{handle_context}" name="handle"/>
+            <output_port default="{vel}" name="velocity"/>
+        </SubTree>
+        <Action ID="EncourageMessage">
+            <output_port default="{message_frequency}" name="frequency"/>
+            <output_port default="{audio_message}" name="message"/>
+        </Action>
+        <Condition ID="EnoughNumberOfSteps"/>
+        <Action ID="FesteningMessage">
+            <output_port default="{message_frequency}" name="frequency"/>
+            <output_port default="{audio_message}" name="message"/>
+            <input_port default="{mean_walk_speed}" name="step"/>
+        </Action>
+        <Condition ID="Festinating">
+            <input_port default="{gait_type}" name="gait"/>
+        </Condition>
+        <SubTree ID="FestinatingTurning">
+            <input_port default="{handle_context}" name="force_action"/>
+        </SubTree>
+        <SubTree ID="FestinatingWalk">
+            <input_port default="{handle_context}" name="force_action"/>
+            <input_port default="{gait_type}" name="gait"/>
+        </SubTree>
+        <SubTree ID="ForceAnalysis">
+            <output_port default="{handle_context}" name="force_action"/>
+        </SubTree>
+        <Action ID="ForceAnalyzer">
+            <output_port default="{handle_context}" name="force_action">Push or Pull</output_port>
+            <input_port default="{raw_fd}" name="forces">Raw forces inpout from handles</input_port>
+        </Action>
+        <Action ID="ForceSensor">
+            <output_port default="{raw_fd}" name="forces"/>
+        </Action>
+        <Condition ID="Freezing">
+            <input_port default="{gait_type}" name="gait"/>
+        </Condition>
+        <Action ID="FreezingMessage">
+            <output_port default="{audio_frequency}" name="frequency"/>
+            <output_port default="{audio_message}" name="message"/>
+            <input_port default="{mean_walk_speed}" name="step"/>
+        </Action>
+        <SubTree ID="FreezingWalk">
+            <input_port default="{handle_context}" name="force_action"/>
+            <input_port default="{gait_type}" name="gait"/>
+        </SubTree>
+        <SubTree ID="GaitAnalysis">
+            <output_port default="{gait_type}" name="gait"/>
+        </SubTree>
+        <Action ID="GaitRecognizer">
+            <input_port default="{raw_lrf_data}" name="LRF"/>
+            <input_port default="{raw_fd}" name="forces">Raw forces inpout from handles</input_port>
+            <output_port default="{gait_type}" name="gait">Festinating Gait, Normal Gait, Freezing Gait</output_port>
+        </Action>
+        <Action ID="LRFSensor">
+            <output_port default="{raw_lrf_data}" name="LRF"/>
+        </Action>
+        <Action ID="LaseDataSegmentation">
+            <output_port default="{processed_ld}" name="laser_data"/>
+            <input_port default="{raw_ld}" name="laser_raw_data">Raw data provided by laser scanner</input_port>
+        </Action>
+        <SubTree ID="MaxVelAnalysis">
+            <output_port default="{max_linear_vel}" name="max_linear_vel"/>
+            <output_port default="{max_angular_vel}" name="max_rotation"/>
+        </SubTree>
+        <Action ID="MaxVelocityAnalyzer">
+            <output_port default="{max_angular_vel}" name="max_rotation"/>
+            <output_port default="{max_linear_vel}" name="max_speed"/>
+            <input_port default="{road_context}" name="road_condition"/>
+        </Action>
+        <Action ID="NumberOfSteps"/>
+        <Condition ID="RehabilitationMode">
+            <input_port default="{mode}" name="navigation_mode"/>
+        </Condition>
+        <SubTree ID="RehabilitationWalk"/>
+        <SubTree ID="RoadAnalysis">
+            <output_port default="{road_context}" name="road_contition"/>
+            <output_port default="{goal_pose}" name="temporal_goal"/>
+        </SubTree>
+        <Action ID="RoadConditionAnalyzer">
+            <input_port default="{processed_ld}" name="laser_data">Laser points from laser scan</input_port>
+            <output_port default="{road_context}" name="road_condition">Safe space (SS), Obstacle space (OS) or Harzardous space (HS)</output_port>
+            <output_port default="{goal_pose}" name="temporal_goal">The nearness diagram algorithmdetermines the robot's temporal goal when there areobstacles in front of the robot</output_port>
+        </Action>
+        <Action ID="SpeedControl">
+            <input_port default="{gait_type}" name="gait"/>
+            <input_port default="{handle_context}" name="handle">push or pull</input_port>
+            <input_port default="{max_angular_vel}" name="max_rotation">vehicle max rotational speed</input_port>
+            <input_port default="{max_linear_vel}" name="max_speed">vehicle max vel</input_port>
+            <input_port default="{mean_walk_speed}" name="step"/>
+            <output_port default="{vel}" name="velocity"/>
+        </Action>
+        <SubTree ID="StepAnalysis">
+            <output_port default="{mean_walk_speed}" name="step"/>
+        </SubTree>
+        <Action ID="StepAnalyzer">
+            <input_port default="{raw_lrf_data}" name="LRF"/>
+            <output_port default="{mean_walk_speed}" name="step"/>
+        </Action>
+        <Action ID="StopRobot">
+            <output_port default="{message_frequency}" name="frequency"/>
+            <output_port default="{message}" name="message"/>
+            <output_port default="0" name="velocity"/>
+        </Action>
+        <Condition ID="Turning">
+            <input_port default="{handle_context}" name="force_action"/>
+        </Condition>
+        <SubTree ID="VelocityCalculator">
+            <input_port default="{gait_type}" name="gait"/>
+            <input_port default="{handle_context}" name="handle"/>
+            <output_port default="{vel}" name="velocity"/>
+        </SubTree>
+    </TreeNodesModel>
+    <!-- ////////// -->
+</root>
+

@@ -1,0 +1,273 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="BehaviorTree">
+    <!-- ////////// -->
+    <BehaviorTree ID="AllurePetToSafeRoomBT">
+        <ReactiveSequence name="AllurePetToSafeRoom">
+            <Fallback>
+                <Condition ID="PetInSight"/>
+                <SubTree ID="FindPetBT"/>
+            </Fallback>
+            <Fallback>
+                <Condition ID="SongPlaying"/>
+                <Action ID="PlaySong"/>
+            </Fallback>
+            <SetBlackboard name="SafeRoom" output_key="safe_room" value="safe_room"/>
+            <Action ID="GotoRoom" room="${safe_room}"/>
+        </ReactiveSequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="AskPersonToLeaveBT">
+        <RetryUntilSuccesful num_attempts="5">
+            <Inverter>
+                <Sequence name="MovePerson">
+                    <Action ID="FindPerson"/>
+                    <Action ID="AskPersonToMove"/>
+                </Sequence>
+            </Inverter>
+        </RetryUntilSuccesful>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="BehaviorTree">
+        <QueueNode name="Day">
+            <SubTree ID="PetCheckupBT"/>
+            <Sequence>
+                <Condition ID="PetIsHealthy" report="${health_file}"/>
+                <SubTree ID="PlayWithPetBT"/>
+            </Sequence>
+            <SubTree ID="FeedPetBT"/>
+            <Action ID="GotoDockStation"/>
+        </QueueNode>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="CallPetBT">
+        <Timeout msec="60000">
+            <RetryUntilSuccesful num_attempts="-1">
+                <Sequence>
+                    <Action ID="PlaySong"/>
+                    <Condition ID="PetFound" dog_found="false"/>
+                </Sequence>
+            </RetryUntilSuccesful>
+        </Timeout>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="FeedPetBT">
+        <Sequence name="FeedPet">
+            <SubTree ID="FindPetBT"/>
+            <Action ID="PourFood"/>
+            <ReactiveSequence name="Feeding">
+                <Fallback>
+                    <Condition ID="PetInSight"/>
+                    <SubTree ID="SearchPetRoomBT"/>
+                </Fallback>
+                <RetryUntilSuccesful num_attempts="-1">
+                    <Condition ID="FoodEmpty"/>
+                </RetryUntilSuccesful>
+            </ReactiveSequence>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="FindPetBT">
+        <Fallback name="FindDog">
+            <SubTree ID="CallPetBT"/>
+            <SubTree ID="SearchPetHouseBT"/>
+        </Fallback>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="FindToyBT">
+        <Sequence>
+            <RetryUntilSuccesful num_attempts="-1">
+                <Fallback>
+                    <Inverter>
+                        <Action ID="RetrieveToyRoom" retrieve_room="{room}" toy_found="{result}"/>
+                    </Inverter>
+                    <SubTree ID="SearchToyBT" output="toy_found_result" target="{room}"/>
+                </Fallback>
+            </RetryUntilSuccesful>
+            <Condition ID="ToyInSight"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="GetToyBT">
+        <SequenceStar name="GetToy">
+            <Action ID="ApproachToy" toy_pose="0;0"/>
+            <Action ID="ArmToToy" toy_pose="0;0" toy_type="ball"/>
+            <Action ID="GrabToy" toy_pose="0;0" toy_type="ball"/>
+            <Action ID="StoreToy" toy_type="ball"/>
+        </SequenceStar>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="GrabToyBT">
+        <ReactiveSequence name="GrabToy">
+            <Fallback>
+                <Condition ID="ToyInSight"/>
+                <SubTree ID="SearchToyInRoom"/>
+            </Fallback>
+            <SubTree ID="GetToyBT"/>
+        </ReactiveSequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="PetCheckupBT">
+        <Sequence name="PetCheckup">
+            <SubTree ID="FindPetBT"/>
+            <Action ID="ScanPet" report="${health_file}"/>
+            <Action ID="EmailReport" report="${health_file}"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="PlayWithPetBT">
+        <Fallback name="Play">
+            <SubTree ID="PlayWithToyBT"/>
+            <Action ID="OtherTypeOffPlay"/>
+        </Fallback>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="PlayWithToyBT">
+        <SequenceStar name="PlayWithToy">
+            <SubTree ID="FindToyBT"/>
+            <SubTree ID="GrabToyBT"/>
+            <SubTree ID="FindPetBT"/>
+            <RetryUntilSuccesful num_attempts="5">
+                <SubTree ID="AllurePetToSafeRoomBT"/>
+            </RetryUntilSuccesful>
+            <SubTree ID="ThrowToyBT"/>
+        </SequenceStar>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="SearchPetHouseBT">
+        <RetryUntilSuccesful num_attempts="-1">
+            <Fallback name="SearchPet">
+                <Inverter>
+                    <Action ID="RetrievePetRoom" dog_found="${unknown}" room="${living}"/>
+                </Inverter>
+                <SubTree ID="SearchPetRoomBT"/>
+            </Fallback>
+        </RetryUntilSuccesful>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="SearchPetRoomBT">
+        <Sequence name="SearchDogRoom">
+            <Action ID="GotoRoom" room="${living}"/>
+            <Action ID="EnterRoom"/>
+            <Action ID="InspectRoomDog" dog_pose="${dog_pose}"/>
+            <Condition ID="PetFound" dog_found="false"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="SearchToyBT">
+        <Sequence name="SearchToy">
+            <Action ID="GotoRoom" room="{room_to_go}"/>
+            <Action ID="EnterRoom"/>
+            <Action ID="InspectRoomToy" found="{toy_found_result}" toy_pose="{toy_pose}" toy_type="{toy}"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="SearchToyInRoom">
+        <Sequence name="SearchToy">
+            <Action ID="InspectRoomToy" found="{toy_found_result}" toy_pose="0;0" toy_type="ball"/>
+            <Condition ID="ToyFound" toy_found="false"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="ThrowToyBT">
+        <Repeat num_cycles="5">
+            <ReactiveSequence name="ThowToy">
+                <Fallback name="HelloDog">
+                    <Condition ID="PetInSight"/>
+                    <SubTree ID="CallPetBT"/>
+                </Fallback>
+                <SubTree ID="GrabToyBT"/>
+                <SubTree ID="AskPersonToLeaveBT"/>
+                <Action ID="ThrowToy"/>
+            </ReactiveSequence>
+        </Repeat>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <TreeNodesModel>
+        <SubTree ID="AllurePetToSafeRoomBT"/>
+        <Action ID="ApproachToy">
+            <input_port default="0;0" name="toy_pose">Toy pose wrt world</input_port>
+        </Action>
+        <Action ID="ArmToToy">
+            <input_port default="0;0" name="toy_pose">Toy pose wrt world</input_port>
+            <input_port default="ball" name="toy_type">Type of toy</input_port>
+        </Action>
+        <SubTree ID="AskPersonToLeaveBT"/>
+        <Action ID="AskPersonToMove"/>
+        <SubTree ID="CallPetBT"/>
+        <Action ID="EmailReport">
+            <input_port name="report">File path to report</input_port>
+        </Action>
+        <Condition ID="EmptyQueueRoom">
+            <input_port default="false" name="done">True if there is no more room in queue</input_port>
+        </Condition>
+        <Action ID="EnterRoom"/>
+        <SubTree ID="FeedPetBT"/>
+        <Action ID="FindPerson"/>
+        <SubTree ID="FindPetBT"/>
+        <SubTree ID="FindToyBT"/>
+        <Condition ID="FoodEmpty"/>
+        <SubTree ID="GetToyBT"/>
+        <Action ID="GotoDockStation"/>
+        <Action ID="GotoRoom">
+            <input_port default="{room_to_go}" name="room">Place to find the toy</input_port>
+        </Action>
+        <Action ID="GrabToy">
+            <input_port default="0;0" name="toy_pose"/>
+            <input_port default="ball" name="toy_type"/>
+        </Action>
+        <SubTree ID="GrabToyBT"/>
+        <Condition ID="HasToy"/>
+        <Action ID="InspectRoomDog">
+            <output_port default="dog_pose" name="dog_pose"/>
+        </Action>
+        <Action ID="InspectRoomToy">
+            <output_port default="{toy_found_result}" name="found"/>
+            <output_port default="{toy_pose}" name="toy_pose">Toy pose wrt world</output_port>
+            <input_port default="{toy}" name="toy_type">The toy the robot is looking for</input_port>
+        </Action>
+        <Condition ID="InspectSucceed"/>
+        <Action ID="OtherTypeOffPlay"/>
+        <SubTree ID="PetCheckupBT"/>
+        <Condition ID="PetFound">
+            <output_port default="false" name="dog_found"/>
+        </Condition>
+        <Condition ID="PetInSight"/>
+        <Condition ID="PetIsHealthy">
+            <input_port name="report"/>
+        </Condition>
+        <Action ID="PlaySong"/>
+        <SubTree ID="PlayWithPetBT"/>
+        <SubTree ID="PlayWithToyBT"/>
+        <Action ID="PourFood"/>
+        <Action ID="RetrievePetRoom">
+            <input_port default="unknown" name="dog_found"/>
+            <output_port default="living" name="room">Place where dog can be</output_port>
+        </Action>
+        <Action ID="RetrieveToyRoom">
+            <output_port default="bedroom" name="retrieve_room">Place to find the toy</output_port>
+            <input_port default="false" name="toy_found">If toy was found</input_port>
+        </Action>
+        <Action ID="ScanPet">
+            <output_port name="report">A file path that has the health report</output_port>
+        </Action>
+        <SubTree ID="SearchPetHouseBT"/>
+        <SubTree ID="SearchPetRoomBT"/>
+        <SubTree ID="SearchToyBT">
+            <output_port name="toy_found_result" default="result"/>
+            <input_port name="room_to_go" default="room"/>
+        </SubTree>
+        <SubTree ID="SearchToyInRoom"/>
+        <Condition ID="SongPlaying"/>
+        <Action ID="StoreToy">
+            <input_port default="ball" name="toy_type"/>
+        </Action>
+        <Action ID="ThrowToy"/>
+        <SubTree ID="ThrowToyBT"/>
+        <Condition ID="ToyFound">
+            <output_port default="false" name="toy_found">If toy was found</output_port>
+        </Condition>
+        <Condition ID="ToyInSight"/>
+    </TreeNodesModel>
+    <!-- ////////// -->
+</root>
+

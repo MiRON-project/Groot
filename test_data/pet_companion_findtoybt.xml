@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="FindToyBT">
+    <!-- ////////// -->
+    <BehaviorTree ID="FindToyBT">
+        <Sequence>
+            <RetryUntilSuccesful num_attempts="-1">
+                <Fallback>
+                    <Inverter>
+                        <Action ID="RetrieveToyRoom" toy_found="{result}" retrieve_room="bedroom" />
+                    </Inverter>
+                    <SubTree ID="SearchToyBT" toy_found_result="result" room_to_go="retrieve_room" />
+                </Fallback>
+            </RetryUntilSuccesful>
+            <Condition ID="ToyInSight"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="SearchToyBT">
+        <Sequence name="SearchToy">
+            <Action ID="GotoRoom" room="{room_to_go}"/>
+            <Action ID="EnterRoom"/>
+            <Action ID="InspectRoomToy" toy_pose="0;0" toy_type="ball"/>
+            <SetBlackboard output_key="toy_pose" value="{toy_pose}"/>
+            <Condition ID="ToyFound" toy_found_result="false"/>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <TreeNodesModel>
+        <Action ID="EnterRoom"/>
+        <SubTree ID="FindToyBT"/>
+        <Action ID="GotoRoom">
+            <input_port name="room">Place to find the toy</input_port>
+        </Action>
+        <Action ID="InspectRoomToy">
+            <output_port default="0;0" name="toy_pose">Toy pose wrt world</output_port>
+            <input_port default="ball" name="toy_type">The toy the robot is looking for</input_port>
+        </Action>
+        <Action ID="RetrieveToyRoom">
+            <output_port default="bedroom" name="retrieve_room">Place to find the toy</output_port>
+            <input_port default="{result}" name="toy_found">If toy was found</input_port>
+        </Action>
+        <SubTree ID="SearchToyBT">
+            <output_port name="toy_found_result"/>
+            <input_port name="room_to_go"/>
+        </SubTree>
+        <Condition ID="ToyFound">
+            <output_port default="false" name="toy_found_result">If toy was found</output_port>
+        </Condition>
+        <Condition ID="ToyInSight"/>
+    </TreeNodesModel>
+    <!-- ////////// -->
+</root>
+
+

@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="BehaviorTree">
+    <!-- ////////// -->
+    <BehaviorTree ID="BehaviorTree">
+        <ReactiveSequence>
+            <Condition ID="PerceptionOk"/>
+            <Sequence>
+                <Action ID="MakePlan" goal="{goal}" name="NavigationTask" path="{waypoints}"/>
+                <Action ID="GenerateSubgoals" name="GMT" plans="{subgoal_strategy}" waypoints="{waypoints}"/>
+                <Sequence>
+                    <RetryUntilSuccesful num_attempts="-1">
+                        <Fallback>
+                            <Inverter>
+                                <Action ID="RetrieveSubgoal" context_changed="{changed}" name="GMT" plans="{subgoal_strategy}" subgoal="{s_g}"/>
+                            </Inverter>
+                            <Inverter>
+                                <ReactiveFallback>
+                                    <Sequence>
+                                        <Condition ID="contextChanged" context_changed="{changed}" name="GMT" subgoal="{s_g}"/>
+                                        <Action ID="stopRobot"/>
+                                    </Sequence>
+                                    <Action ID="Navigate" name="NavigationTask" subgoal="{s_g}"/>
+                                </ReactiveFallback>
+                            </Inverter>
+                        </Fallback>
+                    </RetryUntilSuccesful>
+                    <Action ID="stopRobot"/>
+                    <Condition ID="goalAchieved" goal="{goal}"/>
+                </Sequence>
+            </Sequence>
+        </ReactiveSequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <TreeNodesModel>
+        <Action ID="GenerateSubgoals">
+            <output_port default="{subgoal_strategy}" name="plans">a struct that contains the list of subgoals and the list of navigation strategies</output_port>
+            <input_port default="{waypoints}" name="waypoints"/>
+        </Action>
+        <Action ID="MakePlan">
+            <input_port default="{goal}" name="goal"/>
+            <output_port default="{waypoints}" name="path"/>
+        </Action>
+        <Action ID="Navigate">
+            <input_port default="{s_g}" name="subgoal"/>
+        </Action>
+        <Condition ID="PerceptionOk"/>
+        <Action ID="RetrieveSubgoal">
+            <input_port default="{changed}" name="context_changed">true if context changed</input_port>
+            <input_port default="{subgoal_strategy}" name="plans">All subgoals and strategies</input_port>
+            <output_port default="{s_g}" name="subgoal">One polygon subgoal and strategy</output_port>
+        </Action>
+        <Condition ID="contextChanged">
+            <output_port default="{changed}" name="context_changed"/>
+            <input_port default="{s_g}" name="subgoal"/>
+        </Condition>
+        <Condition ID="goalAchieved">
+            <input_port default="{goal}" name="goal"/>
+        </Condition>
+        <Action ID="stopRobot"/>
+    </TreeNodesModel>
+    <!-- ////////// -->
+</root>
+
