@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="BehaviorTree">
+    <!-- ////////// -->
+    <BehaviorTree ID="BehaviorTree">
+        <Sequence>
+            <RetryUntilSuccesful num_attempts="-1">
+                <Fallback>
+                    <Fallback>
+                        <SubTree ID="SubTreeOptionA" alternative1="{variant1}" alternative2="{variant2}"/>
+                        <SubTree ID="SubTreeOptionB" alternative1="{variant1}" alternative2="{variant2}"/>
+                    </Fallback>
+                    <Inverter>
+                        <Condition ID="ContextChanged" alternative1="{variant1}" alternative2="{variant2}"/>
+                    </Inverter>
+                </Fallback>
+            </RetryUntilSuccesful>
+            <Inverter>
+                <Condition ID="ContextChanged" alternative1="{variant1}" alternative2="{variant2}"/>
+            </Inverter>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="SubTreeOptionA">
+        <Fallback>
+            <Sequence>
+                <Action ID="GetMironVariant" alternative="{variant1}"/>
+                <ReactiveSequence>
+                    <Sequence>
+                        <Action ID="GetMironVariant" alternative="{variant2}"/>
+                        <Condition ID="isStrategyA" strategy="{variant2}"/>
+                    </Sequence>
+                    <Action ID="StrategyA"/>
+                </ReactiveSequence>
+            </Sequence>
+            <Condition ID="ContextChanged" alternative1="{variant1}" alternative2="{variant2}"/>
+        </Fallback>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="SubTreeOptionB">
+        <Fallback>
+            <Sequence>
+                <Action ID="GetMironVariant" alternative="{variant1}"/>
+                <ReactiveSequence>
+                    <Sequence>
+                        <Action ID="GetMironVariant" alternative="{variant2}"/>
+                        <Condition ID="isStrategyB" strategy="{variant2}"/>
+                    </Sequence>
+                    <Action ID="StrategyB"/>
+                </ReactiveSequence>
+            </Sequence>
+            <Condition ID="ContextChanged" alternative1="{variant1}" alternative2="{variant2}"/>
+        </Fallback>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <TreeNodesModel>
+        <Action ID="Action2"/>
+        <Condition ID="Alternative2">
+            <input_port default="{selection}" name="alternative"/>
+        </Condition>
+        <Condition ID="ContextChanged">
+            <input_port default="{variant1}" name="alternative1"/>
+            <input_port default="{variant2}" name="alternative2"/>
+        </Condition>
+        <Action ID="GetMironVariant">
+            <output_port default="{variant2}" name="alternative"/>
+        </Action>
+        <Action ID="StrategyA"/>
+        <Action ID="StrategyB"/>
+        <SubTree ID="SubTreeOptionA">
+            <output_port default="{variant1}" name="alternative1"/>
+            <output_port default="{variant2}" name="alternative2"/>
+        </SubTree>
+        <SubTree ID="SubTreeOptionB">
+            <output_port default="{variant1}" name="alternative1"/>
+            <output_port default="{variant2}" name="alternative2"/>
+        </SubTree>
+        <Condition ID="isStrategyA">
+            <input_port default="{variant2}" name="strategy"/>
+        </Condition>
+        <Condition ID="isStrategyB">
+            <input_port default="{variant2}" name="strategy"/>
+        </Condition>
+    </TreeNodesModel>
+    <!-- ////////// -->
+</root>
+
