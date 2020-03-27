@@ -1,5 +1,5 @@
 #include "bt_editor_base.h"
-#include <behaviortree_cpp_v3/decorators/subtree_node.h>
+#include "behaviortree_cpp_v3/decorators/subtree_node.h"
 #include <QDebug>
 
 void AbsBehaviorTree::clear()
@@ -191,14 +191,14 @@ const NodeModels &BuiltinNodeModels()
             []() -> NodeModels
     {
         BT::BehaviorTreeFactory factory;
-
+        
         factory.registerNodeType<BT::SubtreeNode>("Root");
 
         NodeModels out;
         for( const auto& it: factory.manifests())
         {
             const auto& model_name = it.first;
-            if( model_name == "SubTree")
+            if( model_name == "SubTree" || model_name == "SubTreeWrapper")
             {
                 continue;
             }
